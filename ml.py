@@ -64,21 +64,19 @@ def getFinalData():
 def test(y_test, y_pred, human):
     metrics = [mean_absolute_error, median_absolute_error, explained_variance_score, r2_score]
     results = [metric(y_test, y_pred) for metric in metrics]
-    for i, result in enumerate(results):
-        if human: print(metrics[i].__name__ + ": " + str(result))
-        else: print(result)
+    if human:
+        for i, result in enumerate(results):
+            print(metrics[i].__name__ + ": " + str(result))
     return results
 
 def train(name, model, param, X_train, X_test, y_train, y_test, human=True):
-    print(name + ":")
     start_time = time.time()
     regr = RandomizedSearchCV(model, param, n_iter=100) if len(param) > 0 else model
     regr.fit(X_train, y_train)
     end_time = time.time()
-    print("Time to train (seconds): " + str(end_time - start_time))
+    if human: print(name + ":\n" + "Time to train (seconds): " + str(end_time - start_time))
     return end_time - start_time, test(y_test, regr.predict(X_test), human)
 
-data = getFinalData()
 models = [svm.SVR(), MLPRegressor(max_iter=1000), DecisionTreeRegressor(), RandomForestRegressor(), LinearRegression()]
 names = ["SVM", "NN", "DT", "RF", "LR"]
 parameters = [{'C': scipy.stats.expon(scale=1),
@@ -104,25 +102,24 @@ ln = len(models)
 t = []
 y = [[] for i in range(ln)]
 nums = [[[] for j in range(ln)] for i in range(4)]
-n = 1
+n = 30
 for k in range(n):
     for i in range(ln):
-        out = train(names[i], models[i], parameters[i], *data)
+        out = train(names[i], models[i], parameters[i], *getFinalData(), False)
         t.append(out[0])
         for j in range(4):
             y[j].append(out[1][j])
             nums[j][i].append(out[1][j])
 
-for row in nums: print(row)
-
 for row in nums:
-    mean, std = "", ""
+    mean = std = ""
     for arr in row:
-        mean += str(stats.tmean(arr))
-        std += str(stats.tstd(arr))
+        mean += str(stats.tmean(arr)) + " "
+        std += str(stats.tstd(arr)) + " "
     print("Mean " + mean)
     print("STD " + std)
     print(stats.f_oneway(*row))
+    print()
 
 fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=False)
 fig.add_subplot(111, frameon=False)
@@ -141,7 +138,7 @@ for i, ax in enumerate(axes.flat):
     fig.legend(h[:ln], l[:ln], bbox_to_anchor=(0.95, 0.75), loc=1, borderaxespad=0.)
 
 plt.tight_layout()
-plt.savefig('graph.png', dpi=800, bbox_inches='tight')
+plt.savefig('graph.png', dpi=800)
 plt.show()
 
 #print(regr.predict(*getDataUnlabeled()))
