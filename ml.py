@@ -21,17 +21,15 @@ def getDataUnlabeled():
 
 def getDataLabeled():
     features, classes = [], []
-    for line in open("Final.csv").read().split("\n")[1:]:
+    for line in open("Cleaned.csv").read().split("\n")[1:]:
         line = line.split(",")
         if len(line) > 1:
             cell = [x if x != "" else np.nan for x in line[:-1]]
             cell.insert(0, ord(cell[0][0]))
             cell[1] = cell[1][1:]
             features.append(cell)
-            eggs = line[-1] if line[-1] != "" else np.nan
-            classes.append(eggs)
-    mean = sum([int(x) if x == x else 0 for x in classes])/len(classes)
-    return Imputer(missing_values='NaN', strategy='mean', axis=0).fit(features).transform(features), np.array([x if x == x else mean for x in classes], dtype=float)
+             classes.append(line[-1])
+    return Imputer(missing_values='NaN', strategy='mean', axis=0).fit(features).transform(features), np.array(classes, dtype=float)
 
 def stratify(data_X, data_y, feature):
     out_X = {}
@@ -62,7 +60,7 @@ def getFinalData():
     return final
 
 def test(y_test, y_pred, human):
-    metrics = [mean_absolute_error, median_absolute_error, explained_variance_score, r2_score]
+    metrics = [mean_absolute_error, r2_score]
     results = [metric(y_test, y_pred) for metric in metrics]
     if human:
         for i, result in enumerate(results):
@@ -101,13 +99,13 @@ parameters = [{'C': scipy.stats.expon(scale=1),
 ln = len(models)
 t = []
 y = [[] for i in range(ln)]
-nums = [[[] for j in range(ln)] for i in range(4)]
-n = 30
+nums = [[[] for j in range(ln)] for i in range(2)]
+n = 1
 for k in range(n):
     for i in range(ln):
         out = train(names[i], models[i], parameters[i], *getFinalData(), False)
         t.append(out[0])
-        for j in range(4):
+        for j in range(2):
             y[j].append(out[1][j])
             nums[j][i].append(out[1][j])
 
@@ -121,7 +119,7 @@ for row in nums:
     print(stats.f_oneway(*row))
     print()
 
-fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=False)
+fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True, sharey=False)
 fig.add_subplot(111, frameon=False)
 plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 plt.grid(False)
@@ -129,13 +127,13 @@ plt.xlabel('Time to train (seconds)')
 plt.ylabel('Model performance', labelpad=40)
 
 colors, markers = ['b', 'g', 'r', 'y', 'm'], ['.', 'o', '^', 's', 'p']
-ylabels = ['Mean absolute error', 'Median absolute error', 'Explained variance score', r'$R^2$' + ' score']
+ylabels = ['Mean absolute error', r'$R^2$' + ' score']
 for i, ax in enumerate(axes.flat):
     for j in range(len(y[i])):
         ax.scatter(t[j], y[i][j], c=colors[j % ln], marker=markers[j % ln], label=names[j % ln])
     ax.set_ylabel(ylabels[i])
     h, l = ax.get_legend_handles_labels()
-    fig.legend(h[:ln], l[:ln], bbox_to_anchor=(0.95, 0.75), loc=1, borderaxespad=0.)
+    fig.legend(h[:ln], l[:ln], loc=2, borderaxespad=0.)
 
 plt.tight_layout()
 plt.savefig('graph.png', dpi=800)
