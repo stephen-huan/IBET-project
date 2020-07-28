@@ -28,7 +28,7 @@ def getDataLabeled():
             cell.insert(0, ord(cell[0][0]))
             cell[1] = cell[1][1:]
             features.append(cell)
-             classes.append(line[-1])
+            classes.append(line[-1])
     return Imputer(missing_values='NaN', strategy='mean', axis=0).fit(features).transform(features), np.array(classes, dtype=float)
 
 def stratify(data_X, data_y, feature):
@@ -100,7 +100,7 @@ ln = len(models)
 t = []
 y = [[] for i in range(ln)]
 nums = [[[] for j in range(ln)] for i in range(2)]
-n = 1
+n = 30
 for k in range(n):
     for i in range(ln):
         out = train(names[i], models[i], parameters[i], *getFinalData(), False)
